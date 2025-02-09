@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+  <meta charset='UTF-8' />
+  <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+  <link rel='stylesheet' href='./predict.css' />
+  <link rel='stylesheet' href='../index.css' />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gridjs/dist/gridjs.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/luxon@2.3.0/build/global/luxon.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/gridjs/dist/theme/mermaid.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <title>Predict</title>
+</head>
+<body>
+  <header class="text-bg-dark">
+    <div class="container d-flex justify-content-center">
+      <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
+        <ul class=" nav col-12 col-lg-auto justify-content-center">
+          <li><a href="../index.html" class="nav-link px-5 text-white border-li">Medicine</a></li>
+          <!-- <li><a href="#" class="nav-link px-5 text-white border-li">Statistics</a></li> -->
+          <li><a href="./records.html" class="nav-link px-5 text-white border-li">Records</a></li>
+        </ul>
+      </div>
+    </div>
+  </header>
+  <!-- http://127.0.0.1:8000/get-medicine-by-id/F0082 -->
+  <section class=" p-5">
+    <h1 id="name">กำลังโหลดข้อมูล </h1>
+    <h5 class="inline-block">รหัสยา : &nbsp; 
+    <h5 class="inline-block" id="head-title">-</h5>
+    </h5>
+    <script>
+      let searchParams = new URLSearchParams(window.location.search)
+      if (searchParams.has('ID')) {
+        let param = searchParams.get('ID')
+        $(document).ready(function () {
+          $("#head-title").text(param);
+          $.getJSON(`http://127.0.0.1:8000/get-medicine-by-id/${param}`, function (data) {
+            $("#name").text(data.product_name); 
+          })
+        });
+      }
+    </script>
+    <br/>
+    <a id="forecast-link" href="./predict.html"><button id="predict" class="btn btn-dark mt-2 mb-2">เริ่มการทำนาย</button></a>
+    <p class="text-danger">** หากไม่พบการทำนาย ให้กดเริ่มการทำนาย ระบบจะใช้เวลาในการคำนวณอย่างน้อยไม่ต่ำกว่า 3 นาที ขึ้นอยู่กับข้อมูลและจำนวนรอบ Epoch ที่ใช้</p>
+    <script> 
+      let searchParam = new URLSearchParams(window.location.search);
+      let productID = searchParam.get('ID');
+      $("#predict").click(function () {
+          linkRequest = "http://127.0.0.1:8000/predict/" + productID
+          $.get(linkRequest, function (response) {
+            $("#predict").attr('disable')
+            $("#predict").addClass('btn-close') 
+          }) 
+        }
+      )
+      if (productID) {
+        let currentHref = $("#forecast-link").attr("href");
+        let newHref = currentHref + "?ID=" + productID;
+        $("#forecast-link").attr("href", newHref);
+      }
+    </script>
+    <button id="month" class="btn btn-outline-dark mt-2 mb-2">รายเดือน</button>
+    <button id="year" class="btn btn-outline-dark mt-2 mb-2">ทั้งหมดปี 2021</button>
+    <div id="month-list" ></div>
+    <div>
+      <div class="mt-5">
+        <canvas class="cl" id="myChart" style="width:80%;"></canvas>
+      </div>
+    </div>
+     <script>
+      let currentChart = null;
+
+      $('#year').click(function () {
+        const year = 2021;
+        let productID = searchParams.get('ID');
+
+        $.get(`http://127.0.0.1:8000/get-yearly-quantity/${year}/${productID}`, function (response) {
+          if (!response.monthly_quantities || response.monthly_quantities.length === 0) {
+            $('#myChart').replaceWith('<p id="myChart" class="text-danger">Not Found  กด เริ่มการทำนาย</p>');
+            return;
+          }
+
+          var months = [];
+          var totalQuantities = [];
+
+          response.monthly_quantities.forEach(function (data) {
+            months.push(data.month);
+            totalQuantities.push(data.total_quantity);
+          });
+
+          if (currentChart) {
+            currentChart.destroy();
+          }
+
+          $('#myChart').replaceWith('<canvas id="myChart"></canvas>'); 
+
+          currentChart = new Chart("myChart", {
+            type: "line",
+            data: {
+              labels: months,
+              datasets: [{
+                label: "Total Predicted Quantity",
+                fill: false,
+                backgroundColor: "rgba(0, 123, 255, 0.6)",
+                borderColor: "rgba(0, 123, 255, 1)",
+                data: totalQuantities
+              }]
+            },
+            options: {
+              legend: { display: true },
+              scales: {
+                yAxes: [{
+                  ticks: {
+                    min: 0,
+                    beginAtZero: true
+                  }
+                }]
+              }
+            }
+          });
+        }).fail(function () {
+          $('#myChart').replaceWith('<p id="myChart" class="text-danger">Not Found  กด เริ่มการทำนาย</p>');
+        });
+      });
+
+      $('#month').click(function () {
+        const months = [
+          'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+          'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+        ];
+
+        const monthValues = [
+          '01', '02', '03', '04', '05', '06',
+          '07', '08', '09', '10', '11', '12'
+        ];
+
+        $('#month-list').empty();
+
+        $.each(months, function (index, month) {
+          const monthButton = $('<button>')
+            .addClass(`btn btn-outline-primary mt-2 mb-2 test`)
+            .text(month)
+            .click(function () {
+              let param = searchParams.get('ID');
+              let yearMonth = `2021-${monthValues[index]}`;
+
+              $.get(`http://127.0.0.1:8000/get-monthly-predictions/${yearMonth}/${param}`, function (response) {
+                if (!response.predictions || response.predictions.length === 0) {
+                  $('#myChart').replaceWith('<p id="myChart" class="text-danger">Not Found กด เริ่มการทำนาย</p>');
+                  return;
+                }
+
+                var dates = [];
+                var quantities = [];
+
+                response.predictions.forEach(function (prediction) {
+                  let formattedDate = new Date(prediction.date).toISOString().split('T')[0];
+                  dates.push(formattedDate);
+                  quantities.push(prediction.predicted_quantity);
+                });
+
+                if (currentChart) {
+                  currentChart.destroy();
+                }
+
+                $('#myChart').replaceWith('<canvas id="myChart"></canvas>'); 
+
+                currentChart = new Chart("myChart", {
+                  type: "line",
+                  data: {
+                    labels: dates,
+                    datasets: [{
+                      label: "Predicted Quantity",
+                      fill: false,
+                      lineTension: 0,
+                      backgroundColor: "yellow",
+                      borderColor: "green",
+                      data: quantities
+                    }]
+                  },
+                  options: {
+                    legend: { display: true },
+                    scales: {
+                      yAxes: [{
+                        ticks: {
+                          min: 1,
+                          max: 31
+                        }
+                      }]
+                    }
+                  }
+                });
+              }).fail(function () {
+                $('#myChart').replaceWith('<p id="myChart" class="text-danger">Not Found  กด เริ่มการทำนาย</p>');
+              });
+            });
+
+          $('#month-list').append(monthButton);
+        });
+      });
+    </script>
+
+    
+    
+
+
+
+    
+  </section>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+</body>
+</html>

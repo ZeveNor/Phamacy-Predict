@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel='stylesheet' href='./add_medicin.css' />
+  <link rel='stylesheet' href='../index.css' />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+  integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+  integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+  <title>Add Sale Records</title>
+</head>
+
+<body>
+  <header class="text-bg-dark">
+    <div class="container d-flex justify-content-center">
+      <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
+        <ul class=" nav col-12 col-lg-auto justify-content-center">
+          <li><a href="../index.html" class="nav-link px-5 text-white border-li">Medicine</a></li>
+          <!-- <li><a href="./" class="nav-link px-5 text-white border-li">Statistics</a></li> -->
+          <li><a href="./records.html" class="nav-link px-5 text-white border-li">Records</a></li>
+        </ul>
+      </div>
+    </div>
+  </header>
+  <div class="container mt-5">
+    <h1 class="text-center">Enter Sales Data</h1>
+    <form id="sales-form">
+      <div class="form-group mb-4">
+        <label for="invoice_no">Invoice No:</label>
+        <input type="text" class="form-control" id="invoice_no" name="invoice_no" required>
+      </div>
+
+      <div class="form-group mb-4">
+        <label for="sale_date">Sale Date (YYYY-MM-DD):</label>
+        <input type="date" class="form-control" id="sale_date" name="sale_date" required>
+      </div>
+
+      <div class="form-group mb-4">
+        <label for="sale_time">Sale Time:</label>
+        <input type="time" class="form-control" id="sale_time" name="sale_time" required>
+      </div>
+
+      <div class="form-group mb-4">
+        <label for="customer_id">Customer ID:</label>
+        <input type="text" class="form-control" id="customer_id" name="customer_id" required>
+      </div>
+
+      <div class="form-group mb-4">
+        <label for="drug_code">Drug Code:</label>
+        <input type="text" class="form-control" id="drug_code" name="drug_code" required>
+      </div>
+
+      <div class="form-group mb-4">
+        <label for="product_name">Product Name:</label>
+        <input type="text" class="form-control" id="product_name" name="product_name" required>
+      </div>
+
+      <div class="form-group mb-4">
+        <label for="batch_no">Batch No:</label>
+        <input type="text" class="form-control" id="batch_no" name="batch_no" required>
+      </div>
+
+      <div class="form-group mb-4">
+        <label for="storage_location">Storage Location:</label>
+        <input type="text" class="form-control" id="storage_location" name="storage_location" required>
+      </div>
+
+      <div class="form-group mb-4">
+        <label for="quantity">Quantity:</label>
+        <input type="number" class="form-control" id="quantity" name="quantity" required>
+      </div>
+
+      <div class="form-group mb-4">
+        <label for="unit">Unit:</label>
+        <input type="text" class="form-control" id="unit" name="unit" required>
+      </div>
+
+      <div class="form-group mb-4">
+        <label for="unit_price">Unit Price:</label>
+        <input type="number" class="form-control" id="unit_price" name="unit_price" required>
+      </div>
+
+      <div class="form-group mb-4">
+        <label for="total_amount">Total Amount:</label>
+        <input type="number" class="form-control" id="total_amount" name="total_amount" required>
+      </div>
+
+      <div class="form-group mb-4">
+        <label for="gross_profit">Gross Profit:</label>
+        <input type="number" class="form-control" id="gross_profit" name="gross_profit" required>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block mb-5">Submit Data</button>
+    </form>
+  </div>
+
+  <script>
+    $(document).ready(function () {
+        $('#sales-form').submit(function (event) {
+          event.preventDefault();
+
+          var salesData = {
+            invoice_no: $('#invoice_no').val(),
+            sale_date: $('#sale_date').val(),
+            sale_time: $('#sale_time').val(),
+            customer_id: $('#customer_id').val(),
+            drug_code: $('#drug_code').val(),
+            product_name: $('#product_name').val(),
+            batch_no: $('#batch_no').val(),
+            storage_location: $('#storage_location').val(),
+            quantity: $('#quantity').val(),
+            unit: $('#unit').val(),
+            unit_price: $('#unit_price').val(),
+            total_amount: $('#total_amount').val(),
+            gross_profit: $('#gross_profit').val()
+          };
+
+          $.ajax({
+            url: 'http://127.0.0.1:8000/update-sales/', 
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify([salesData]),
+            success: function (response) {
+              alert('Data submitted successfully!');
+              console.log(response);
+            },
+            error: function (xhr, status, error) {
+              alert('Error: ' + error);
+              console.log(xhr.responseText);
+            }
+          });
+        });
+      });
+
+  </script> 
+</body>
+
+</html>

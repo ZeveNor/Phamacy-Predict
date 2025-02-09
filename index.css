@@ -1,0 +1,26 @@
+.border-li{
+  padding: 20px !important;
+  /* border-bottom: 8px rgb(227, 126, 126) solid !important; */
+}
+.border-li-active{
+  padding: 20px !important;
+  border-bottom: 8px rgb(227, 126, 126) solid !important;
+}
+
+.border-li:hover,.border-li-active:hover{ 
+  background-color: rgba(255, 255, 255, 0.213);
+  border-bottom: 8px rgba(255, 255, 255, 0.213) solid !important; 
+}
+
+.border-box{
+  list-style: none;
+  text-decoration: none;
+  color: black;
+  padding: 50px 100px !important; 
+  margin: 20px;
+  border: rgb(201, 195, 195) solid 1px; 
+}
+
+.border-box:hover{
+  background-color: rgba(0, 0, 0, 0.101);
+}
