@@ -17,8 +17,8 @@
       <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
         <ul class=" nav col-12 col-lg-auto justify-content-center">
           <li><a href="./index.html" class="nav-link px-5 text-white border-li-active">Medicine</a></li>
-          <!-- <li><a href="#" class="nav-link px-5 text-white border-li">Statistics</a></li> -->
           <li><a href="./pages/records.html" class="nav-link px-5 text-white border-li">Records</a></li>
+          <li><a href="./pages/stocks.html" class="nav-link px-5 text-white border-li">Stocks</a></li>
         </ul> 
       </div>
     </div>
@@ -28,18 +28,24 @@
       <div id="con" class="container text-center">
         <div id="row" class="row">
         </div>
+        <hr/>
+        <p class="bold-500 text-right">จำนวนยาที่พบในระบบ <span id="count-medic"></span> ชนิด</p>
       </div> 
     </div>
     <script>
       $(document).ready(function () {
+        count = 0;
+        $('#count-medic').html(count)
       $.getJSON('http://127.0.0.1:8000/get-all-medicines/', function (data) {
           $('#row').empty();
-
+          console.log(data);
+          count = data.count
+          $('#count-medic').html(count)
           $.each(data.medicines, function (index, medicine) {  
             const medicineBox = $('<a>')
               .addClass('col-11  col-sm-6 col-md-4 col-lg-2 shadow border-box p-3 text-center d-flex align-items-center justify-content-center ')
               .attr('href', `./pages/medicine.html?ID=${medicine.drug_code}`)
-              .text(medicine.product_name)
+              .html(`${medicine.product_name} <br> ${medicine.drug_code}`)
               .css('height', '100px');  
 
             $('#con #row').append(medicineBox);

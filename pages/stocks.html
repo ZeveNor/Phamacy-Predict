@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang='en'>
+
+<head>
+  <meta charset='UTF-8' />
+  <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+  <link rel='stylesheet' href='./predict.css' />
+  <link rel='stylesheet' href='../index.css' />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+    crossorigin="anonymous"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gridjs/dist/gridjs.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/luxon@2.3.0/build/global/luxon.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/gridjs/dist/theme/mermaid.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/chartist.js/latest/chartist.min.css">
+  <script src="//cdn.jsdelivr.net/chartist.js/latest/chartist.min.js"></script>
+  <title>Stocks</title>
+</head>
+
+<body>
+  <header class="text-bg-dark">
+    <div class="container d-flex justify-content-center">
+      <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
+        <ul class=" nav col-12 col-lg-auto justify-content-center">
+          <li><a href="../index.html" class="nav-link px-5 text-white border-li">Medicine</a></li>
+          <li><a href="./records.html" class="nav-link px-5 text-white border-li">Records</a></li>
+          <li><a href="./stocks.html" class="nav-link px-5 text-white border-li-active">Stocks</a></li>
+        </ul>
+      </div>
+    </div>
+  </header>
+  <section class="p-5">
+    <p style="margin-left: 60px; color: red;">**รอระบบประมวลผล 1 - 2 นาที**</p>
+    <div style="margin: 0 50px; overflow: scroll;">
+      <div id="wrapper"></div>
+    </div>
+    <script>
+      const opts = {
+        height: '30px',
+        showPoint: false,
+        fullWidth: true,
+        chartPadding: { top: 0, right: 0, bottom: 0, left: 0 },
+        axisX: { showGrid: false, showLabel: false, offset: 0 },
+        axisY: { showGrid: false, showLabel: false, offset: 0 }
+      };
+
+      const test = new gridjs.Grid({
+          columns: [
+            "รหัสยา", "ชื่อยา", "จำนวนเหลือ", "ยอดขายภายใน 3 วัน", "ยอดขายภายใน 7 วัน",
+            {
+              name: 'กราฟยอดขายอนาคต (7วัน)',
+              sort: false,
+              width: '20%',
+              formatter: (cell) => {
+                const ref = gridjs.createRef();
+                const chart = gridjs.h('div', { ref: ref });
+
+                setTimeout(() => {
+                  if (ref.current) {
+                    new Chartist.Line(ref.current, {
+                      series: [cell]
+                    }, opts);
+                  }
+                }, 0);
+
+                return chart;
+              }
+            },
+            {
+              name: 'สถานะ',
+              formatter: (cell) => {
+                return gridjs.h('b', {
+                  style: {
+                    'color': cell == 'เพียงพอ' ? 'green' : 'red'
+                  }
+                }, cell);
+              }
+            },
+          ],
+          search: true,
+          sort: true,
+          resizable: true,
+          data: async () => {
+            const response = await fetch('http://127.0.0.1:8000/get-predictions-stock');
+            const data = await response.json();
+            predictions = data.predictions;
+            predictions_3days = data.predictions_sum_3days;
+            predictions_7days = data.predictions_sum_7days;
+
+            return new Promise(resolve => {
+              fetch('http://127.0.0.1:8000/get-all-stocks/')
+                .then(response => response.json())
+                .then(data => {
+                  const filteredRows = data.data.map(row => {
+                    const drugCode = row.drug_code;
+
+                    const predictionData = predictions[drugCode] || [0, 0, 0, 0, 0, 0, 0];
+                    const predictData7 = predictions_7days[drugCode] || 0;
+                    const predictData3 = predictions_3days[drugCode] || 0;
+
+                    const res_text7 = row.amount - predictData7;
+                    const res_text3 = row.amount - predictData3;
+
+                    let status = "เพียงพอ";
+                    if (res_text3 <= 0) {
+                      status = "ไม่เพียงพอสำหรับ 3 วัน";
+                    } else if (res_text7 <= 0) {
+                      status = "ไม่เพียงพอสำหรับ 7 วัน";
+                    }
+                    if (predictData3 == 0 || predictData7 == 0){
+                      status = "ยังไม่ได้พยากรณ์";
+                    }
+
+                    return [
+                      row.drug_code,
+                      row.product_name,
+                      row.amount,
+                      predictData3,
+                      predictData7,
+                      predictionData,
+                      status
+                    ];
+                  });
+
+                  resolve(filteredRows);
+                })
+                .catch(error => {
+                  console.error('Error fetching data:', error);
+                  resolve([]);
+                });
+            });
+          }
+        }).render(document.getElementById("wrapper"));
+    </script>
+
+  </section>
+</body>
+
+</html>
