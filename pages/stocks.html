@@ -37,6 +37,22 @@
     <div style="margin: 0 50px; overflow: scroll;">
       <div id="wrapper"></div>
     </div>
+
+    <div class="modal fade" id="rowModal" tabindex="-1" aria-labelledby="rowModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="drug_name">none</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <h3 id="modalText">ต้องสั่งอย่างน้อย <span id="need">-</span> กล่อง</h3>
+            <br/>
+            <p id="modalText">1 กล่อง มีทั้งหมด <span id="amount_box">-</span> <span id="unit"></span></p>
+          </div>
+        </div>
+      </div>
+    </div>
     <script>
       const opts = {
         height: '30px',
@@ -46,12 +62,12 @@
         axisX: { showGrid: false, showLabel: false, offset: 0 },
         axisY: { showGrid: false, showLabel: false, offset: 0 }
       };
-
+      
       const test = new gridjs.Grid({
           columns: [
-            "รหัสยา", "ชื่อยา", "จำนวนเหลือ", "ยอดขายภายใน 3 วัน", "ยอดขายภายใน 7 วัน",
+            "รหัสยา", "ชื่อยา", "จำนวนเหลือ", "ยอดขายเดือนหน้า",
             {
-              name: 'กราฟยอดขายอนาคต (7วัน)',
+              name: 'กราฟยอดขายอนาคต (12 เดือน)',
               sort: false,
               width: '20%',
               formatter: (cell) => {
@@ -87,8 +103,7 @@
             const response = await fetch('http://127.0.0.1:8000/get-predictions-stock');
             const data = await response.json();
             predictions = data.predictions;
-            predictions_3days = data.predictions_sum_3days;
-            predictions_7days = data.predictions_sum_7days;
+            predictions_onemonth = data.one_month_predictions;
 
             return new Promise(resolve => {
               fetch('http://127.0.0.1:8000/get-all-stocks/')
@@ -98,19 +113,15 @@
                     const drugCode = row.drug_code;
 
                     const predictionData = predictions[drugCode] || [0, 0, 0, 0, 0, 0, 0];
-                    const predictData7 = predictions_7days[drugCode] || 0;
-                    const predictData3 = predictions_3days[drugCode] || 0;
+                    const predictDatamonth = predictions_onemonth[drugCode] || 0;
 
-                    const res_text7 = row.amount - predictData7;
-                    const res_text3 = row.amount - predictData3;
+                    const res_text = row.amount - predictDatamonth;
 
                     let status = "เพียงพอ";
-                    if (res_text3 <= 0) {
-                      status = "ไม่เพียงพอสำหรับ 3 วัน";
-                    } else if (res_text7 <= 0) {
-                      status = "ไม่เพียงพอสำหรับ 7 วัน";
-                    }
-                    if (predictData3 == 0 || predictData7 == 0){
+                    if (res_text < 0) {
+                      status = "ไม่เพียงพอสำหรับเดือนหน้า";
+                    } 
+                    if (predictDatamonth == 0){
                       status = "ยังไม่ได้พยากรณ์";
                     }
 
@@ -118,8 +129,7 @@
                       row.drug_code,
                       row.product_name,
                       row.amount,
-                      predictData3,
-                      predictData7,
+                      predictDatamonth,
                       predictionData,
                       status
                     ];
@@ -134,6 +144,34 @@
             });
           }
         }).render(document.getElementById("wrapper"));
+        test.on('rowClick', (...args) => {
+            const row = args.find(arg => arg && arg._cells);
+            
+            $("#drug_name").text(""); 
+            $("#amount_box").text("");
+            $("#need").text("");
+            $("#unit").text("");
+
+            if (row) {
+              acol = row._cells.map(cell => cell.data)
+              if(acol[5] == "ไม่เพียงพอสำหรับเดือนหน้า"){
+                const modal = new bootstrap.Modal(document.getElementById("rowModal"));
+                modal.show();
+                $.get(`http://127.0.0.1:8000/get-box/${acol[0]}/${acol[2]}/${acol[3]}`, (data, status) => {
+                  if (status === "success") {
+                    $("#drug_name").text(data.name);
+                    $("#amount_box").text(data.per_box);
+                    $("#need").text(data.need);
+                    $("#unit").text(data.unit);
+                  } else {
+                    console.error("Failed to fetch data from API");
+                  }
+                });
+              }
+            } else {
+              console.log("No valid row data found.");
+            }
+          });
     </script>
 
   </section>

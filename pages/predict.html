@@ -78,8 +78,8 @@
             $("#forecast-link").attr("href", newHref);
           }
         </script>
-        <button id="month" class="btn btn-outline-dark mt-2 mb-2">รายเดือน</button>
-        <button id="year" class="btn btn-outline-dark mt-2 mb-2">ทั้งหมดปี 2021</button>
+        <button id="year2020" class="btn btn-outline-dark mt-2 mb-2">ปี 2020</button>
+        <button id="year2021" class="btn btn-outline-dark mt-2 mb-2">ปี 2021</button>
         <div id="month-list" ></div>
         <div>
           <div class="mt-5">
@@ -89,10 +89,7 @@
         <script>
           let currentChart = null;
 
-          $('#year').click(function () {
-            const year = 2021;
-            let productID = searchParams.get('ID');
-
+          function createChart(productID, year) {
             $.get(`http://127.0.0.1:8000/get-yearly-quantity/${year}/${productID}`, function (response) {
               if (!response.monthly_quantities || response.monthly_quantities.length === 0) {
                 $('#myChart').replaceWith('<p id="myChart" class="text-danger">Not Found  กด เริ่มการทำนาย</p>');
@@ -111,7 +108,7 @@
                 currentChart.destroy();
               }
 
-              $('#myChart').replaceWith('<canvas id="myChart"></canvas>'); 
+              $('#myChart').replaceWith('<canvas id="myChart"></canvas>');
 
               currentChart = new Chart("myChart", {
                 type: "line",
@@ -128,7 +125,7 @@
                 options: {
                   legend: { display: true },
                   scales: {
-                    yAxes: [{ 
+                    yAxes: [{
                       ticks: {
                         min: 0,
                         beginAtZero: true
@@ -140,83 +137,20 @@
             }).fail(function () {
               $('#myChart').replaceWith('<p id="myChart" class="text-danger">Not Found  กด เริ่มการทำนาย</p>');
             });
+          }
+
+          $('#year2020').click(function () {
+            const year = 2020;
+            let productID = searchParams.get('ID');
+            createChart(productID,year);
+          });
+          
+          $('#year2021').click(function () {
+            const year = 2021;
+            let productID = searchParams.get('ID');
+            createChart(productID,year);
           });
 
-          $('#month').click(function () {
-            const months = [
-              'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
-              'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
-            ];
-
-            const monthValues = [
-              '01', '02', '03', '04', '05', '06',
-              '07', '08', '09', '10', '11', '12'
-            ];
-
-            $('#month-list').empty();
-
-            $.each(months, function (index, month) {
-              const monthButton = $('<button>')
-                .addClass(`btn btn-outline-primary mt-2 mb-2 test`)
-                .text(month)
-                .click(function () {
-                  let param = searchParams.get('ID');
-                  let yearMonth = `2021-${monthValues[index]}`;
-
-                  $.get(`http://127.0.0.1:8000/get-monthly-predictions/${yearMonth}/${param}`, function (response) {
-                    if (!response.predictions || response.predictions.length === 0) {
-                      $('#myChart').replaceWith('<p id="myChart" class="text-danger">Not Found กด เริ่มการทำนาย</p>');
-                      return;
-                    }
-
-                    var dates = [];
-                    var quantities = [];
-
-                    response.predictions.forEach(function (prediction) {
-                      let formattedDate = new Date(prediction.date).toISOString().split('T')[0];
-                      dates.push(formattedDate);
-                      quantities.push(prediction.predicted_quantity);
-                    });
-
-                    if (currentChart) {
-                      currentChart.destroy();
-                    }
-
-                    $('#myChart').replaceWith('<canvas id="myChart" ></canvas>'); 
-
-                    currentChart = new Chart("myChart", {
-                      type: "line",
-                      data: {
-                        labels: dates,
-                        datasets: [{
-                          label: "Predicted Quantity",
-                          fill: false,
-                          lineTension: 0,
-                          backgroundColor: "yellow",
-                          borderColor: "green",
-                          data: quantities
-                        }]
-                      },
-                      options: {
-                        legend: { display: true },
-                        scales: {
-                          yAxes: [{
-                            ticks: {
-                              min: 1,
-                              max: 31
-                            }
-                          }]
-                        }
-                      }
-                    });
-                  }).fail(function () {
-                    $('#myChart').replaceWith('<p id="myChart" class="text-danger">Not Found  กด เริ่มการทำนาย</p>');
-                  });
-                });
-
-              $('#month-list').append(monthButton);
-            });
-          });
         </script>
         </div>
         <div class="table-w"> 

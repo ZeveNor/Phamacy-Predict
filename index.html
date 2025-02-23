@@ -43,9 +43,9 @@
           $('#count-medic').html(count)
           $.each(data.medicines, function (index, medicine) {  
             const medicineBox = $('<a>')
-              .addClass('col-11  col-sm-6 col-md-4 col-lg-2 shadow border-box p-3 text-center d-flex align-items-center justify-content-center ')
+              .addClass('col-11  col-sm-6 col-md-4 col-lg-2 shadow border-box p-3 text-center d-flex flex-column align-items-center justify-content-center ')
               .attr('href', `./pages/medicine.html?ID=${medicine.drug_code}`)
-              .html(`${medicine.product_name} <br> ${medicine.drug_code}`)
+              .html(`${medicine.product_name} <br>  ${medicine.drug_code}</br>`)
               .css('height', '100px');  
 
             $('#con #row').append(medicineBox);
